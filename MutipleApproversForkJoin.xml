@@ -1,0 +1,277 @@
+<?xml version="1.0"?>
+<workflow-definition
+	xmlns="urn:liferay.com:liferay-workflow_6.2.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:liferay.com:liferay-workflow_6.2.0 http://www.liferay.com/dtd/liferay-workflow-definition_6_2_0.xsd">
+	<name>Multiple Approvers - Fork & Join</name>
+	<description>Multiple approvers that can approve news articles.</description>
+	<version>1</version>
+	<condition>
+		<name>has-humanities</name>
+		<metadata>
+			<![CDATA[{"xy":[532,163.00000762939453]}]]>
+		</metadata>
+		<script>
+			<![CDATA[
+				import com.liferay.asset.kernel.model.AssetCategory;
+				import com.liferay.asset.kernel.model.AssetEntry;
+				import com.liferay.asset.kernel.model.AssetRenderer;
+				import com.liferay.asset.kernel.model.AssetRendererFactory;
+				import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
+				import com.liferay.portal.kernel.util.GetterUtil;
+				import com.liferay.portal.kernel.workflow.WorkflowConstants;
+				import com.liferay.portal.kernel.workflow.WorkflowHandler;
+				import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
+				import java.util.List;
+				String className = (String)workflowContext.get(WorkflowConstants.CONTEXT_ENTRY_CLASS_NAME);
+				WorkflowHandler workflowHandler = WorkflowHandlerRegistryUtil.getWorkflowHandler(className);
+				AssetRendererFactory assetRendererFactory = workflowHandler.getAssetRendererFactory();
+				long classPK = GetterUtil.getLong((String)workflowContext.get(WorkflowConstants.CONTEXT_ENTRY_CLASS_PK));
+				AssetRenderer assetRenderer = workflowHandler.getAssetRenderer(classPK);
+				AssetEntry assetEntry = assetRendererFactory.getAssetEntry(assetRendererFactory.getClassName(), assetRenderer.getClassPK());
+				List<AssetCategory> assetCategories = assetEntry.getCategories();
+				returnValue = "approve";
+				for (AssetCategory assetCategory : assetCategories) {
+					String categoryName = assetCategory.getName();
+					if (categoryName.equals("Humanities and Social Sciences")) {
+					    returnValue = "review";
+					    return;
+					}
+				}
+			]]>
+		</script>
+		<script-language>groovy</script-language>
+		<transitions>
+			<transition>
+				<name>review</name>
+				<target>humanities-review</target>
+				<default>true</default>
+			</transition>
+			<transition>
+				<name>approve</name>
+				<target>final-join</target>
+				<default>false</default>
+			</transition>
+		</transitions>
+	</condition>
+	<condition>
+		<name>has-science</name>
+		<metadata>
+			<![CDATA[{"xy":[135,147]}]]>
+		</metadata>
+		<script>
+			<![CDATA[
+				import com.liferay.asset.kernel.model.AssetCategory;
+				import com.liferay.asset.kernel.model.AssetEntry;
+				import com.liferay.asset.kernel.model.AssetRenderer;
+				import com.liferay.asset.kernel.model.AssetRendererFactory;
+				import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
+				import com.liferay.portal.kernel.util.GetterUtil;
+				import com.liferay.portal.kernel.workflow.WorkflowConstants;
+				import com.liferay.portal.kernel.workflow.WorkflowHandler;
+				import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
+				import java.util.List;
+				String className = (String)workflowContext.get(WorkflowConstants.CONTEXT_ENTRY_CLASS_NAME);
+				WorkflowHandler workflowHandler = WorkflowHandlerRegistryUtil.getWorkflowHandler(className);
+				AssetRendererFactory assetRendererFactory = workflowHandler.getAssetRendererFactory();
+				long classPK = GetterUtil.getLong((String)workflowContext.get(WorkflowConstants.CONTEXT_ENTRY_CLASS_PK));
+				AssetRenderer assetRenderer = workflowHandler.getAssetRenderer(classPK);
+				AssetEntry assetEntry = assetRendererFactory.getAssetEntry(assetRendererFactory.getClassName(), assetRenderer.getClassPK());
+				List<AssetCategory> assetCategories = assetEntry.getCategories();
+				returnValue = "approve";
+				for (AssetCategory assetCategory : assetCategories) {
+					String categoryName = assetCategory.getName();
+					if (categoryName.equals("Science and Technology")) {
+					    returnValue = "review";
+					    return;
+					}
+				}
+			]]>
+		</script>
+		<script-language>groovy</script-language>
+		<transitions>
+			<transition>
+				<name>review</name>
+				<target>sciences-review</target>
+				<default>true</default>
+			</transition>
+			<transition>
+				<name>approve</name>
+				<target>final-join</target>
+				<default>false</default>
+			</transition>
+		</transitions>
+	</condition>
+	<fork>
+		<name>fork382077</name>
+		<metadata>
+			<![CDATA[{"xy":[318,87.00000762939453]}]]>
+		</metadata>
+		<transitions>
+			<transition>
+				<name>check2</name>
+				<target>has-humanities</target>
+				<default>true</default>
+			</transition>
+			<transition>
+				<name>check1</name>
+				<target>has-science</target>
+				<default>false</default>
+			</transition>
+		</transitions>
+	</fork>
+	<join>
+		<name>final-join</name>
+		<metadata>
+			<![CDATA[{"xy":[317,366.99375915527344]}]]>
+		</metadata>
+		<transitions>
+			<transition>
+				<name>approve</name>
+				<target>approved</target>
+				<default>true</default>
+			</transition>
+		</transitions>
+	</join>
+	<state>
+		<name>created</name>
+		<metadata>
+			<![CDATA[{"xy":[228,0]}]]>
+		</metadata>
+		<initial>true</initial>
+		<transitions>
+			<transition>
+				<name>submit</name>
+				<target>fork382077</target>
+				<default>true</default>
+			</transition>
+		</transitions>
+	</state>
+	<state>
+		<name>approved</name>
+		<metadata>
+			<![CDATA[{"xy":[326,507.99998474121094]}]]>
+		</metadata>
+		<actions>
+			<action>
+				<name>approve</name>
+				<description></description>
+				<script>
+					<![CDATA[import com.liferay.portal.kernel.workflow.WorkflowStatusManagerUtil;
+						import com.liferay.portal.kernel.workflow.WorkflowConstants;
+
+						WorkflowStatusManagerUtil.updateStatus(WorkflowConstants.getLabelStatus("approved"), workflowContext);]]>
+				</script>
+				<script-language>groovy</script-language>
+				<execution-type>onEntry</execution-type>
+			</action>
+		</actions>
+	</state>
+	<task>
+		<name>humanities-review</name>
+		<metadata>
+			<![CDATA[{"xy":[649,329.00001525878906]}]]>
+		</metadata>
+		<actions>
+			<notification>
+				<name>Review Notification</name>
+				<description></description>
+				<template>
+					<![CDATA[${userName} sent you a ${entryType} for review in the workflow.]]>
+				</template>
+				<template-language>freemarker</template-language>
+				<notification-type>email</notification-type>
+				<notification-type>user-notification</notification-type>
+				<recipients>
+					<assignees/>
+				</recipients>
+				<execution-type>onAssignment</execution-type>
+			</notification>
+			<notification>
+				<name>Review Completion Notification</name>
+				<description></description>
+				<template>
+					<![CDATA[Your submission has been reviewed by ${userName}.
+
+					<#if taskComments?has_content> The following comments were made: "${taskComments}"</#if>.]]>
+				</template>
+				<template-language>freemarker</template-language>
+				<notification-type>email</notification-type>
+				<notification-type>user-notification</notification-type>
+				<recipients>
+					<user/>
+				</recipients>
+				<execution-type>onExit</execution-type>
+			</notification>
+		</actions>
+		<assignments>
+			<roles>
+				<role>
+					<role-type>organization</role-type>
+					<name>Humanities Article Reviewer</name>
+					<auto-create>true</auto-create>
+				</role>
+			</roles>
+		</assignments>
+		<transitions>
+			<transition>
+				<name>approve</name>
+				<target>final-join</target>
+				<default>true</default>
+			</transition>
+		</transitions>
+	</task>
+	<task>
+		<name>sciences-review</name>
+		<metadata>
+			<![CDATA[{"xy":[25,323.99375915527344]}]]>
+		</metadata>
+		<actions>
+			<notification>
+				<name>Review Notification</name>
+				<description></description>
+				<template>
+					<![CDATA[${userName} sent you a ${entryType} for review in the workflow.]]>
+				</template>
+				<template-language>freemarker</template-language>
+				<notification-type>email</notification-type>
+				<notification-type>user-notification</notification-type>
+				<recipients>
+					<assignees/>
+				</recipients>
+				<execution-type>onAssignment</execution-type>
+			</notification>
+			<notification>
+				<name>Review Completion Notification</name>
+				<description></description>
+				<template>
+					<![CDATA[Your submission has been reviewed by ${userName}.
+					
+					<#if taskComments?has_content> The following comments were made: "${taskComments}"</#if>.]]>
+				</template>
+				<template-language>freemarker</template-language>
+				<notification-type>email</notification-type>
+				<notification-type>user-notification</notification-type>
+				<recipients>
+					<user/>
+				</recipients>
+				<execution-type>onExit</execution-type>
+			</notification>
+		</actions>
+		<assignments>
+			<roles>
+				<role>
+					<role-type>organization</role-type>
+					<name>Sciences Article Reviewer</name>
+					<auto-create>true</auto-create>
+				</role>
+			</roles>
+		</assignments>
+		<transitions>
+			<transition>
+				<name>approve</name>
+				<target>final-join</target>
+				<default>true</default>
+			</transition>
+		</transitions>
+	</task>
+</workflow-definition>
